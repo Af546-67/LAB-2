@@ -1,182 +1,112 @@
 package com.example.aashish;
 
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.cell.PropertyValueFactory;
 
-import java.net.URL;
-import java.util.ResourceBundle;
 import java.sql.*;
 
-public class HelloController implements Initializable {
-    public TableView<User> userTable;
-    public TableColumn<User,Integer> id;
-    public TableColumn <User,String> name;
-    public TableColumn <User,String> email;
-    public TableColumn <User,String> password;
-    public TextField uid;
-    public TextField uname;
-    public TextField uemail;
-    public TextField upassword;
+public class HelloController {
+
     @FXML
     private Label welcomeText;
+    @FXML
+    private TextField uid;
+    @FXML
+    private TextField uname;
+    @FXML
+    private TextField uemail;
+    @FXML
+    private TextField upassword;
 
-    ObservableList<User> list = FXCollections.observableArrayList();
+    // Database connection
+    private Connection conn;
+    private DatabaseMetaData DatabaseConnection;
+
+    public void initialize() {
+        try {
+            conn = DatabaseConnection.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
     @FXML
-    protected void onHelloButtonClick() {
-        fetchdata();
+    public void createUser() {
+        String query = "INSERT INTO tbl_user_login (username, userEmail, userpassword) VALUES (?, ?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, uname.getText());
+            stmt.setString(2, uemail.getText());
+            stmt.setString(3, upassword.getText());
+            stmt.executeUpdate();
+            clearFields();
+            welcomeText.setText("User created successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
-    private void fetchdata() {
-        list.clear();
-
-        String jdbcUrl = "jdbc:mysql://localhost:3306/programminglab2";
-        String dbUser = "root";
-        String dbPassword = "";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser,
-                dbPassword)) {
-            // Execute a SQL query to retrieve data from the database
-            String query = "SELECT * FROM csd214lab2";
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
-            // Populate the table with data from the database
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                String email = resultSet.getString("email");
-                String password = resultSet.getString("password");
-                userTable.getItems().add(new User(id, name, email, password));
+    @FXML
+    public void readUser() {
+        int userId = Integer.parseInt(uid.getText());
+        String query = "SELECT * FROM tbl_user_login WHERE userID = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                uname.setText(rs.getString("username"));
+                uemail.setText(rs.getString("userEmail"));
+                upassword.setText(rs.getString("userpassword"));
+                welcomeText.setText("User found.");
+            } else {
+                clearFields();
+                welcomeText.setText("User not found.");
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    @Override
-    public void initialize(URL url, ResourceBundle resourceBundle) {
-
-        id.setCellValueFactory(new PropertyValueFactory<User,Integer>("id"));
-        name.setCellValueFactory(new PropertyValueFactory<User,String>("name"));
-        email.setCellValueFactory(new PropertyValueFactory<User,String>("email"));
-        password.setCellValueFactory(new PropertyValueFactory<User,String>("password"));
-        userTable.setItems(list);
-
-
-    }
-
-    public void InsertData(ActionEvent actionEvent) {
-
-
-
-        String name = uname.getText();
-        String email = uemail.getText();
-        String password = upassword.getText();
-
-
-
-
-        String jdbcUrl = "jdbc:mysql://localhost:3306/programminglab2";
-        String dbUser = "root";
-        String dbPassword = "";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser,
-                dbPassword)) {
-            // Execute a SQL query to retrieve data from the database
-            String query = "INSERT INTO `csd214lab2`( `name`, `email`, `password`) VALUES ('"+name+"','"+email+"','"+password+"')";
-            Statement statement = connection.createStatement();
-            statement.execute(query);
-            // Populate the table with data from the database
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
-    }
-
-    public void UpdateData(ActionEvent actionEvent) {
-        String id = uid.getText();
-        String name = uname.getText();
-        String email = uemail.getText();
-        String password = upassword.getText();
-
-
-
-
-        String jdbcUrl = "jdbc:mysql://localhost:3306/programminglab2";
-        String dbUser = "root";
-        String dbPassword = "";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser,
-                dbPassword)) {
-            // Execute a SQL query to retrieve data from the database
-            String query = "UPDATE `csd214lab2` SET `name`='"+name+"',`email`='"+email+"',`password`='"+password+"' WHERE id='"+id+"' ";
-            Statement statement = connection.createStatement();
-            statement.execute(query);
-            // Populate the table with data from the database
-
+    @FXML
+    public void updateUser() {
+        int userId = Integer.parseInt(uid.getText());
+        String query = "UPDATE tbl_user_login SET username = ?, userEmail = ?, userpassword = ? WHERE userID = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, uname.getText());
+            stmt.setString(2, uemail.getText());
+            stmt.setString(3, upassword.getText());
+            stmt.setInt(4, userId);
+            stmt.executeUpdate();
+            clearFields();
+            welcomeText.setText("User updated successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void DeleteData(ActionEvent actionEvent) {
-
-        String id = uid.getText();
-
-
-
-
-        String jdbcUrl = "jdbc:mysql://localhost:3306/programminglab2";
-        String dbUser = "root";
-        String dbPassword = "";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser,
-                dbPassword)) {
-            // Execute a SQL query to retrieve data from the database
-            String query = "DELETE FROM `csd214lab2` WHERE id='"+id+"'";
-            Statement statement = connection.createStatement();
-            statement.execute(query);
-            // Populate the table with data from the database
-
+    @FXML
+    public void deleteUser() {
+        int userId = Integer.parseInt(uid.getText());
+        String query = "DELETE FROM tbl_user_login WHERE userID = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setInt(1, userId);
+            stmt.executeUpdate();
+            clearFields();
+            welcomeText.setText("User deleted successfully.");
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public void LoadData(ActionEvent actionEvent) {
+    private void clearFields() {
+        uid.clear();
+        uname.clear();
+        uemail.clear();
+        upassword.clear();
+    }
 
-        String id = uid.getText();
-
-        String jdbcUrl = "jdbc:mysql://localhost:3306/programminglab2";
-        String dbUser = "root";
-        String dbPassword = "";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser,
-                dbPassword)) {
-            // Execute a SQL query to retrieve data from the database
-            String query = "SELECT * FROM csd214lab2 WHERE id='"+id+"'";
-            Statement statement = connection.createStatement();
-            ResultSet resultSet = statement.executeQuery(query);
-            // Populate the table with data from the database
-            while (resultSet.next()) {
-
-                String name = resultSet.getString("name");
-                String email = resultSet.getString("email");
-                String password = resultSet.getString("password");
-
-                uname.setText(name);
-                uemail.setText(email);
-                upassword.setText(password);
-
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
+    public void onHelloButtonClick(ActionEvent actionEvent) {
     }
 }
